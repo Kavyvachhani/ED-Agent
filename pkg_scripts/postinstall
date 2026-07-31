@@ -12,7 +12,13 @@ fi
 
 USER_UID=$(id -u "$CURRENT_USER" 2>/dev/null || echo "")
 
-APP_PATH="/Applications/Industrility Agent.app"
+if [ -d "/Applications/IndustrilityAgent.app" ]; then
+    APP_PATH="/Applications/IndustrilityAgent.app"
+elif [ -d "/Applications/Industrility Agent.app" ]; then
+    APP_PATH="/Applications/Industrility Agent.app"
+else
+    APP_PATH="/Applications/IndustrilityAgent.app"
+fi
 
 # Register LaunchAgent for auto-start at login
 PLIST_DIR="/Users/$CURRENT_USER/Library/LaunchAgents"
@@ -27,7 +33,7 @@ if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
 <plist version="1.0"><dict>
   <key>Label</key><string>com.industrility.agent</string>
   <key>ProgramArguments</key>
-  <array><string>/Applications/Industrility Agent.app/Contents/MacOS/IndustrilityAgent</string></array>
+  <array><string>${APP_PATH}/Contents/MacOS/IndustrilityAgent</string></array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><false/>
   <key>StandardErrorPath</key><string>/tmp/com.industrility.agent.err</string>

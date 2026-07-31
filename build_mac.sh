@@ -92,14 +92,13 @@ echo "   ✅ Code-signed (ad-hoc)"
 
 # ── 8. Build .pkg using pkgbuild + productbuild with postinstall script ────────
 echo "→ Building component .pkg..."
-pkgbuild \
-    --root /dev/null \
-    --component-plist /dev/null \
-    --install-location /dev/null \
-    2>/dev/null || true   # ignore, we use --component below
+STAGE_DIR="build/pkg_stage"
+rm -rf "$STAGE_DIR"
+mkdir -p "$STAGE_DIR"
+cp -R "$APP_PATH" "$STAGE_DIR/"
 
 pkgbuild \
-    --component "$APP_PATH" \
+    --root "$STAGE_DIR" \
     --install-location "/Applications" \
     --scripts "pkg_scripts" \
     --identifier "${BUNDLE_ID}" \

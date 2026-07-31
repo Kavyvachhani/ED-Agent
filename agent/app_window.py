@@ -454,9 +454,9 @@ class Dashboard(tk.Frame):
         self.countdown_lbl.pack(side="left")
 
         logout_btn = tk.Button(
-            info, text="Disconnect Zoho", font=F(9),
-            bg=BG, fg=GREY_DIM, relief="flat", bd=0,
-            cursor="hand2", command=self.on_logout,
+            info, text="🚪  Sign Out", font=F(10, "bold"),
+            bg=BG, fg=RED, activebackground=BG, activeforeground="#FF6B6B",
+            relief="flat", bd=0, cursor="hand2", command=self.on_logout,
         )
         logout_btn.pack(side="right")
 
@@ -654,7 +654,16 @@ class DeviceSecurityApp:
         self._show(dash)
 
     def _logout(self):
-        from . import registration
+        from . import auth
+        auth.clear_tokens()
+        if self._scheduler:
+            try:
+                self._scheduler.stop()
+            except Exception:
+                pass
+            self._scheduler = None
+        self._scheduler_started = False
+
         if os.path.exists(config.PROFILE_FILE):
             try:
                 os.remove(config.PROFILE_FILE)

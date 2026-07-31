@@ -204,10 +204,17 @@ def _win_password_policy() -> dict:
                 min_len = int(parts[-1].strip())
             except ValueError:
                 pass
-    if min_len is None or min_len == 0:
-        min_len = 8
+    if min_len is None:
+        min_len = 4
+
+    last_set = _run_ps("(Get-LocalUser $env:USERNAME).PasswordLastSet.ToString('yyyy-MM-dd')").strip()
+    last_update_msg = f" (Password last updated: {last_set})" if last_set and last_set != "unknown" else ""
+
     ok = min_len >= config.MIN_PASSWORD_LENGTH
-    return _status(ok, f"Password policy enforced: Minimum {min_len} characters required")
+    if ok:
+        return _status(True, f"Password policy enforced: Minimum {min_len} characters required.{last_update_msg}")
+    else:
+        return _status(False, f"Password policy non-compliant: Minimum {min_len} characters allowed (minimum {config.MIN_PASSWORD_LENGTH} required).{last_update_msg}")
 
 
 def _win_hostname_serial() -> tuple[str, str]:
@@ -343,20 +350,45 @@ def _mac_secure_boot() -> dict:
 
 
 def _mac_password_policy() -> dict:
-    """Check if password policy enforces minimum length (minimum 8 characters)."""
-    user = os.getlogin()
+    """Check if password policy enforces minimum length (minimum 8 characters) and fetch last password set date."""
+    console_user = _run(["stat", "-f", "%Su", "/dev/console"]).strip() or os.environ.get("USER", "root")
+
+    last_set_str = "unknown"
+    dscl_out = _run(["dscl", ".", "-read", f"/Users/{console_user}", "accountPolicyData"])
+    if "accountPolicyData" in dscl_out:
+        plist_start = dscl_out.find("<?xml")
+        if plist_start != -1:
+            try:
+                import plistlib
+                data = plistlib.loads(dscl_out[plist_start:].encode("utf-8"))
+                pts = data.get("passwordLastSetTime") or data.get("creationTime")
+                if pts:
+                    dt = datetime.fromtimestamp(float(pts), tz=timezone.utc)
+                    last_set_str = dt.strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
     out = _run(["pwpolicy", "getaccountpolicies"])
-    min_len = 8
-    if "policyAttributePasswordMinLength" in out:
-        match = re.search(r"<key>policyAttributePasswordMinLength</key>\s*<integer>(\d+)</integer>", out)
-        if match:
-            min_len = int(match.group(1))
+    min_len = None
+
+    match_regex = re.search(r"\.\{(\d+),", out)
+    if match_regex:
+        min_len = int(match_regex.group(1))
+
+    match_xml = re.search(r"<key>policyAttributePasswordMinLength</key>\s*<integer>(\d+)</integer>", out)
+    if match_xml:
+        min_len = int(match_xml.group(1))
+
+    if min_len is None:
+        min_len = 4
 
     ok = min_len >= config.MIN_PASSWORD_LENGTH
+    last_update_msg = f" (Password last updated: {last_set_str})" if last_set_str != "unknown" else ""
+
     if ok:
-        return _status(True, f"Password policy enforced: Minimum {min_len} characters required")
+        return _status(True, f"Password policy enforced: Minimum {min_len} characters required.{last_update_msg}")
     else:
-        return _status(False, f"Password length non-compliant: {min_len} chars (minimum {config.MIN_PASSWORD_LENGTH} required)")
+        return _status(False, f"Password policy non-compliant: Minimum {min_len} characters allowed (minimum {config.MIN_PASSWORD_LENGTH} required).{last_update_msg}")
 
 
 def _mac_hostname_serial() -> tuple[str, str]:
