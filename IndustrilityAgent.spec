@@ -23,6 +23,8 @@ HIDDEN = [
     "apscheduler.schedulers.background",
     "apscheduler.triggers.cron",
     "tzlocal",
+    "tzdata",
+    "zoneinfo",
     "requests",
     "tkinter",
     "tkinter.ttk",

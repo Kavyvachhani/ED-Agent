@@ -27,10 +27,13 @@ class ScanScheduler:
             Zero-argument function to call when the scheduled scan fires.
         """
         self._scan_fn  = scan_fn
-        self._scheduler = BackgroundScheduler(
-            timezone="local",
-            job_defaults={"misfire_grace_time": 3600},  # tolerate 1h miss
-        )
+        try:
+            self._scheduler = BackgroundScheduler(
+                job_defaults={"misfire_grace_time": 3600},  # tolerate 1h miss
+            )
+        except Exception as e:
+            logger.warning(f"BackgroundScheduler init fallback: {e}")
+            self._scheduler = BackgroundScheduler()
         self._job = None
 
     def start(self):

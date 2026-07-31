@@ -5,6 +5,7 @@ tkinter-tooltip>=2.1.0
 
 # Scheduling
 APScheduler>=3.10.4
+tzdata>=2024.1
 
 # Zoho OAuth + API
 requests>=2.31.0
