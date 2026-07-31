@@ -1,0 +1,32 @@
+INDUSTRILITY AGENT — END USER LICENSE AGREEMENT
+================================================
+
+Copyright © 2026 Industrility. All rights reserved.
+
+This software ("Industrility Agent") is provided by Industrility ("Company") for
+use by authorised employees only. By installing or using this software, you agree
+to the following terms:
+
+1. GRANT OF LICENSE
+   The Company grants you a non-exclusive, non-transferable licence to install
+   and use this software solely on a device you own or control, for the purpose
+   of reporting device compliance status to your employer.
+
+2. RESTRICTIONS
+   You may not: (a) copy, modify, distribute, or reverse-engineer the software;
+   (b) use the software for any purpose other than compliance reporting;
+   (c) remove or alter any proprietary notices.
+
+3. DATA COLLECTION
+   This software collects device security information (OS version, screen lock
+   settings, password policies, encryption status) and uploads reports to your
+   organisation's Industrility WorkDrive folder. No personal files or browsing
+   history are collected.
+
+4. DISCLAIMER OF WARRANTIES
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND.
+
+5. TERMINATION
+   This licence terminates automatically if you violate any of its terms.
+
+For support: support@industrility.com

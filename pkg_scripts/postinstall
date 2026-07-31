@@ -1,0 +1,50 @@
+#!/bin/bash
+# postinstall — runs as root after the .pkg installs the .app to /Applications.
+# Launches the app for the current user (not as root) using launchctl asuser.
+
+# Find the logged-in user and their UID
+CURRENT_USER=$(stat -f "%Su" /dev/console 2>/dev/null || echo "")
+if [ -z "$CURRENT_USER" ] || [ "$CURRENT_USER" = "root" ]; then
+    # Try loginwindow approach
+    CURRENT_USER=$(python3 -c "import subprocess; r=subprocess.run(['scutil','--get','ComputerName'],capture_output=True,text=True); print(r.stdout.strip())" 2>/dev/null || true)
+    CURRENT_USER=$(who | grep "console" | awk '{print $1}' | head -1)
+fi
+
+USER_UID=$(id -u "$CURRENT_USER" 2>/dev/null || echo "")
+
+APP_PATH="/Applications/Industrility Agent.app"
+
+# Register LaunchAgent for auto-start at login
+PLIST_DIR="/Users/$CURRENT_USER/Library/LaunchAgents"
+PLIST_FILE="$PLIST_DIR/com.industrility.agent.plist"
+
+if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
+    mkdir -p "$PLIST_DIR"
+    cat > "$PLIST_FILE" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.industrility.agent</string>
+  <key>ProgramArguments</key>
+  <array><string>/Applications/Industrility Agent.app/Contents/MacOS/IndustrilityAgent</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><false/>
+  <key>StandardErrorPath</key><string>/tmp/com.industrility.agent.err</string>
+  <key>StandardOutPath</key><string>/tmp/com.industrility.agent.out</string>
+</dict></plist>
+EOF
+    chown "$CURRENT_USER" "$PLIST_FILE"
+    chmod 644 "$PLIST_FILE"
+fi
+
+# Strip quarantine attribute so macOS doesn't block the app
+xattr -cr "$APP_PATH" 2>/dev/null || true
+xattr -d com.apple.quarantine "$APP_PATH" 2>/dev/null || true
+
+# Launch immediately for the current user
+if [ -n "$USER_UID" ] && [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
+    sudo -u "$CURRENT_USER" /usr/bin/open "$APP_PATH" 2>/dev/null || true
+fi
+
+exit 0

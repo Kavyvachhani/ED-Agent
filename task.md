@@ -1,0 +1,10 @@
+- [x] Research existing build scripts and .spec file
+- [x] Create `entitlements.plist` (macOS security relaxation)
+- [x] Update `IndustrilityAgent.spec` (Info.plist keys, icon)
+- [/] Rewrite `build_mac.sh` (icon copy, codesign with entitlements, postinstall, pkg) — building now
+- [x] Create `installer_windows.nsi` (NSIS installer script)
+- [x] Update `build_windows.bat` (invoke makensis after PyInstaller)
+- [x] Create `pkg_scripts/postinstall` (macOS post-install launch script)
+- [x] Create `LICENSE.txt` (required by NSIS installer wizard)
+- [ ] Verify macOS build output
+- [ ] Create walkthrough

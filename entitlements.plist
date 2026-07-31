@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- ── PyInstaller requires these two to run ────────────────────────── -->
+    <!-- Allow the bootloader to map executable memory (required for PyInstaller) -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <!-- Disable library validation so bundled .dylibs can load -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <!-- Allow JIT (some tkinter / PIL code paths need this) -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+
+    <!-- ── Network: OAuth localhost callback + Zoho API calls ───────────── -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.network.server</key>
+    <true/>
+
+    <!-- ── Keychain access ───────────────────────────────────────────────── -->
+    <key>com.apple.security.keychain-access-groups</key>
+    <array>
+        <string>com.industrility.agent</string>
+    </array>
+
+    <!-- ── No sandbox — required for system info collection ─────────────── -->
+    <!-- (Sandbox would block reading hardware info, screen-lock settings, etc.) -->
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+</dict>
+</plist>
