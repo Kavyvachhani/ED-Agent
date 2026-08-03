@@ -44,7 +44,15 @@ python3 prepare_icons.py
 
 # ── 3. Clean previous builds ──────────────────────────────────────────────────
 echo "→ Cleaning previous builds..."
-rm -rf build dist 2>/dev/null || true
+# Previous installer runs leave root-owned files inside dist/ — must sudo-rm
+if [ -d "dist" ]; then
+    sudo chmod -R 777 dist 2>/dev/null || true
+    sudo rm -rf dist 2>/dev/null || true
+fi
+if [ -d "build" ]; then
+    sudo chmod -R 777 build 2>/dev/null || true
+    sudo rm -rf build 2>/dev/null || true
+fi
 
 # ── 4. PyInstaller .app bundle ────────────────────────────────────────────────
 echo "→ Running PyInstaller..."

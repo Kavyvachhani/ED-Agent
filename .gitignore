@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 build/
 dist/
+dist_old_*/
 *.egg-info/
 .eggs/
 
@@ -21,3 +22,23 @@ ENV/
 # Operating System Files
 .DS_Store
 Thumbs.db
+
+# PyInstaller artifacts
+*.spec.bak
+*.pkg.bak
+
+# Application data / secrets (never commit tokens)
+agent/token.json
+agent/profile.json
+token.json
+profile.json
+
+# Logs
+*.log
+agent.log
+
+# macOS quarantine xattrs cache
+.com.apple.timemachine*
+
+# Task / scratch files
+task.md

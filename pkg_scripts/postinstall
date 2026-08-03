@@ -1,31 +1,45 @@
 #!/bin/bash
 # postinstall — runs as root after the .pkg installs the .app to /Applications.
-# Launches the app for the current user (not as root) using launchctl asuser.
+# Properly registers the app with Spotlight and LaunchServices so it appears
+# immediately in Application searches and Launchpad.
 
-# Find the logged-in user and their UID
+set -e
+
+APP_NAME="IndustrilityAgent"
+APP_PATH="/Applications/${APP_NAME}.app"
+
+# ── 1. Find the real logged-in user (not root) ─────────────────────────────────
 CURRENT_USER=$(stat -f "%Su" /dev/console 2>/dev/null || echo "")
 if [ -z "$CURRENT_USER" ] || [ "$CURRENT_USER" = "root" ]; then
-    # Try loginwindow approach
-    CURRENT_USER=$(python3 -c "import subprocess; r=subprocess.run(['scutil','--get','ComputerName'],capture_output=True,text=True); print(r.stdout.strip())" 2>/dev/null || true)
     CURRENT_USER=$(who | grep "console" | awk '{print $1}' | head -1)
+fi
+if [ -z "$CURRENT_USER" ] || [ "$CURRENT_USER" = "root" ]; then
+    CURRENT_USER=$(/usr/sbin/scutil <<< "show State:/Users/ConsoleUser" 2>/dev/null | awk '/Name :/ { print $3 }' | head -1)
 fi
 
 USER_UID=$(id -u "$CURRENT_USER" 2>/dev/null || echo "")
 
-if [ -d "/Applications/IndustrilityAgent.app" ]; then
-    APP_PATH="/Applications/IndustrilityAgent.app"
-elif [ -d "/Applications/Industrility Agent.app" ]; then
-    APP_PATH="/Applications/Industrility Agent.app"
-else
-    APP_PATH="/Applications/IndustrilityAgent.app"
-fi
+# ── 2. Strip quarantine so Gatekeeper doesn't block dylib loading ──────────────
+xattr -cr  "$APP_PATH" 2>/dev/null || true
+xattr -d com.apple.quarantine "$APP_PATH" 2>/dev/null || true
 
-# Register LaunchAgent for auto-start at login
-PLIST_DIR="/Users/$CURRENT_USER/Library/LaunchAgents"
-PLIST_FILE="$PLIST_DIR/com.industrility.agent.plist"
+# ── 3. Fix permissions so user can open it and Spotlight can index it ──────────
+chmod -R 755 "$APP_PATH"
+chown -R "${CURRENT_USER}:staff" "$APP_PATH" 2>/dev/null || true
 
+# ── 4. Register with LaunchServices so Spotlight & Launchpad see it instantly ──
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+    -f -R -trusted "$APP_PATH" 2>/dev/null || true
+
+# ── 5. Flush the Spotlight metadata index for /Applications ───────────────────
+mdimport "$APP_PATH" 2>/dev/null || true
+
+# ── 6. Register LaunchAgent for auto-start at login (runs as current user) ────
 if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
+    PLIST_DIR="/Users/$CURRENT_USER/Library/LaunchAgents"
+    PLIST_FILE="$PLIST_DIR/com.industrility.agent.plist"
     mkdir -p "$PLIST_DIR"
+
     cat > "$PLIST_FILE" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -33,7 +47,7 @@ if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
 <plist version="1.0"><dict>
   <key>Label</key><string>com.industrility.agent</string>
   <key>ProgramArguments</key>
-  <array><string>${APP_PATH}/Contents/MacOS/IndustrilityAgent</string></array>
+  <array><string>${APP_PATH}/Contents/MacOS/${APP_NAME}</string></array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><false/>
   <key>StandardErrorPath</key><string>/tmp/com.industrility.agent.err</string>
@@ -42,13 +56,12 @@ if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
 EOF
     chown "$CURRENT_USER" "$PLIST_FILE"
     chmod 644 "$PLIST_FILE"
+
+    # Load the agent for the current session (non-fatal if already loaded)
+    sudo -u "$CURRENT_USER" launchctl load "$PLIST_FILE" 2>/dev/null || true
 fi
 
-# Strip quarantine attribute so macOS doesn't block the app
-xattr -cr "$APP_PATH" 2>/dev/null || true
-xattr -d com.apple.quarantine "$APP_PATH" 2>/dev/null || true
-
-# Launch immediately for the current user
+# ── 7. Launch the app immediately for the current user ────────────────────────
 if [ -n "$USER_UID" ] && [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
     sudo -u "$CURRENT_USER" /usr/bin/open "$APP_PATH" 2>/dev/null || true
 fi
