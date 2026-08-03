@@ -304,9 +304,10 @@ class Dashboard(tk.Frame):
     Main screen after successful Zoho login.
     Shows compliance score, per-check details, Send Evidence button, countdown.
     """
-    def __init__(self, parent, profile: dict):
+    def __init__(self, parent, profile: dict, on_logout: Optional[Callable] = None):
         super().__init__(parent, bg=BG)
         self.profile    = profile
+        self.on_logout  = on_logout
         self._logo_img  = None
         self._check_rows: dict[str, tk.Label] = {}     # key → status dot label
         self._check_detail: dict[str, tk.Label] = {}   # key → detail label
@@ -451,6 +452,14 @@ class Dashboard(tk.Frame):
             info, text="", font=F(10), bg=BG, fg=GREY, anchor="w",
         )
         self.countdown_lbl.pack(side="left")
+
+        if self.on_logout:
+            logout_btn = tk.Button(
+                info, text="🚪  Sign Out", font=F(10, "bold"),
+                bg=BG, fg=RED, activebackground=BG, activeforeground="#FF6B6B",
+                relief="flat", bd=0, cursor="hand2", command=self.on_logout,
+            )
+            logout_btn.pack(side="right")
 
         tk.Frame(p, bg=BG, height=20).pack()  # bottom padding
 
@@ -642,8 +651,32 @@ class DeviceSecurityApp:
 
     def _on_login_success(self, profile: dict):
         self._start_scheduler(profile)
-        dash = Dashboard(self.root, profile)
+        dash = Dashboard(self.root, profile, on_logout=self._logout)
         self._show(dash)
+
+    def _logout(self):
+        from . import auth
+        auth.clear_tokens()
+        if self._scheduler:
+            try:
+                self._scheduler.stop()
+            except Exception:
+                pass
+            self._scheduler = None
+        self._scheduler_started = False
+
+        if os.path.exists(config.PROFILE_FILE):
+            try:
+                os.remove(config.PROFILE_FILE)
+            except Exception:
+                pass
+        if os.path.exists(config.LAST_REPORT_FILE):
+            try:
+                os.remove(config.LAST_REPORT_FILE)
+            except Exception:
+                pass
+        login = LoginScreen(self.root, on_login_success=self._on_login_success)
+        self._show(login)
 
 
 
@@ -676,7 +709,7 @@ class DeviceSecurityApp:
         if profile and auth.is_authenticated():
             # Straight to dashboard
             self._start_scheduler(profile)
-            dash = Dashboard(self.root, profile)
+            dash = Dashboard(self.root, profile, on_logout=self._logout)
             self._show(dash)
         else:
             # Show login / registration

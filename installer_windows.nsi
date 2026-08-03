@@ -95,6 +95,9 @@ Section "Install" SEC_MAIN
 
     SectionIn RO   ; always install — cannot be de-selected
 
+    SetShellVarContext all
+    SetRegView 64
+
     ; Set output path and copy files
     SetOutPath "$INSTDIR"
 
@@ -112,7 +115,7 @@ Section "Install" SEC_MAIN
     CreateShortcut "${START_MENU}\${APP_NAME}.lnk" \
                    "$INSTDIR\${APP_EXE}" "" \
                    "$INSTDIR\icon.ico" 0 \
-                   SW_SHOWNORMAL ALT|F4 \
+                   SW_SHOWNORMAL "" \
                    "Industrility Device Security Agent"
     CreateShortcut "${START_MENU}\Uninstall ${APP_NAME}.lnk" \
                    "${UNINST_EXE}" "" \
@@ -146,6 +149,9 @@ SectionEnd
 
 ;── UNINSTALL Section ─────────────────────────────────────────────────────────────
 Section "Uninstall"
+
+    SetShellVarContext all
+    SetRegView 64
 
     ; Stop the running app gracefully (taskkill)
     ExecWait 'taskkill /F /IM "${APP_EXE}"' $0
