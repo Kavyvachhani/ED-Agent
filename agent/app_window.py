@@ -716,11 +716,8 @@ class DeviceSecurityApp:
             login = LoginScreen(self.root, on_login_success=self._on_login_success)
             self._show(login)
 
-        # macOS: keep process alive when window is closed (hide instead of quit)
-        if _MAC:
-            self.root.protocol("WM_DELETE_WINDOW", self._hide_window)
-        else:
-            self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        # Keep process and background scheduler alive when window is closed (hide instead of quit)
+        self.root.protocol("WM_DELETE_WINDOW", self._hide_window)
 
         self.root.mainloop()
 

@@ -289,25 +289,7 @@ def _mac_os_patch() -> dict:
 
 
 def _mac_antivirus() -> dict:
-    """macOS has no system AV API. Check common AV apps + built-in XProtect."""
-    av_paths = [
-        ("/Library/Symantec",                    "Symantec Endpoint Protection"),
-        ("/Applications/CrowdStrike Falcon.app", "CrowdStrike Falcon"),
-        ("/Applications/SentinelOne.app",        "SentinelOne"),
-        ("/Library/Sophos Anti-Virus",           "Sophos AV"),
-        ("/Applications/Carbon Black.app",       "Carbon Black"),
-        ("/Applications/Malwarebytes.app",       "Malwarebytes"),
-    ]
-    found = [name for path, name in av_paths if os.path.exists(path)]
-
-    # XProtect is built into macOS — always present on modern macOS
-    xprotect_db = "/System/Library/CoreServices/XProtect.bundle"
-    if os.path.exists(xprotect_db):
-        found.append("XProtect (built-in)")
-
-def _mac_antivirus() -> dict:
     """Check for active macOS malware protection (XProtect/Gatekeeper or third-party AV)."""
-    gk = _run(["spctl", "--status"])
     found = []
     for app in ["CrowdStrike", "Falcon", "Sophos", "Defender", "SentinelOne", "Malwarebytes", "Bitdefender", "Kaspersky"]:
         res = _run(["mdfind", f"kMDItemKind == 'Application' && kMDItemDisplayName == '*{app}*'"])
