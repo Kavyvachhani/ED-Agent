@@ -63,14 +63,16 @@ def _asset(filename: str) -> str:
     return os.path.join(base, "assets", filename)
 
 
-def _load_logo(size: tuple[int, int] = (340, 95)) -> Optional[ImageTk.PhotoImage]:
-    """Load and resize the high-resolution Industrility logo cleanly."""
+def _load_logo(size: tuple[int, int] = (300, 75)) -> Optional[ImageTk.PhotoImage]:
+    """Load the original clean Industrility header logo cleanly without asset distortion."""
     try:
-        path = _asset("logo_clean.png")
+        path = _asset("logo_header_clean.png")
         if not os.path.exists(path):
-            path = _asset("Industirlity.png")
+            path = _asset("logo_dark_theme.png")
         if not os.path.exists(path):
-            path = _asset("logo_production_brand.png")
+            path = _asset("logo_clean.png")
+        if not os.path.exists(path):
+            return None
         img = Image.open(path).convert("RGBA")
         img.thumbnail(size, Image.LANCZOS)
         return ImageTk.PhotoImage(img)

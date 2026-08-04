@@ -3,8 +3,6 @@
 # Properly registers the app with Spotlight and LaunchServices so it appears
 # immediately in Application searches and Launchpad.
 
-set -e
-
 APP_NAME="IndustrilityAgent"
 APP_PATH="/Applications/${APP_NAME}.app"
 
@@ -20,11 +18,11 @@ fi
 USER_UID=$(id -u "$CURRENT_USER" 2>/dev/null || echo "")
 
 # ── 2. Strip quarantine so Gatekeeper doesn't block dylib loading ──────────────
-xattr -cr  "$APP_PATH" 2>/dev/null || true
+xattr -cr "$APP_PATH" 2>/dev/null || true
 xattr -d com.apple.quarantine "$APP_PATH" 2>/dev/null || true
 
 # ── 3. Fix permissions so user can open it and Spotlight can index it ──────────
-chmod -R 755 "$APP_PATH"
+chmod -R 755 "$APP_PATH" 2>/dev/null || true
 chown -R "${CURRENT_USER}:staff" "$APP_PATH" 2>/dev/null || true
 
 # ── 4. Register with LaunchServices so Spotlight & Launchpad see it instantly ──
@@ -38,7 +36,7 @@ mdimport "$APP_PATH" 2>/dev/null || true
 if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
     PLIST_DIR="/Users/$CURRENT_USER/Library/LaunchAgents"
     PLIST_FILE="$PLIST_DIR/com.industrility.agent.plist"
-    mkdir -p "$PLIST_DIR"
+    mkdir -p "$PLIST_DIR" 2>/dev/null || true
 
     cat > "$PLIST_FILE" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -54,15 +52,18 @@ if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
   <key>StandardOutPath</key><string>/tmp/com.industrility.agent.out</string>
 </dict></plist>
 EOF
-    chown "$CURRENT_USER" "$PLIST_FILE"
-    chmod 644 "$PLIST_FILE"
+    chown "$CURRENT_USER" "$PLIST_FILE" 2>/dev/null || true
+    chmod 644 "$PLIST_FILE" 2>/dev/null || true
 
-    # Load the agent for the current session (non-fatal if already loaded)
-    sudo -u "$CURRENT_USER" launchctl load "$PLIST_FILE" 2>/dev/null || true
+    # Load the agent for current user session cleanly
+    if [ -n "$USER_UID" ]; then
+        sudo -u "$CURRENT_USER" launchctl bootstrap "gui/$USER_UID" "$PLIST_FILE" 2>/dev/null || \
+        sudo -u "$CURRENT_USER" launchctl load "$PLIST_FILE" 2>/dev/null || true
+    fi
 fi
 
-# ── 7. Launch the app immediately for the current user ────────────────────────
-if [ -n "$USER_UID" ] && [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
+# ── 7. Launch the app immediately for current user ────────────────────────────
+if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
     sudo -u "$CURRENT_USER" /usr/bin/open "$APP_PATH" 2>/dev/null || true
 fi
 
