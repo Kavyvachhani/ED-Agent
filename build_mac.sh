@@ -44,16 +44,12 @@ python3 prepare_icons.py
 
 # ── 3. Clean previous builds ──────────────────────────────────────────────────
 echo "→ Cleaning previous builds..."
-if [ -d "dist" ]; then
-    rm -rf dist 2>/dev/null || sudo rm -rf dist 2>/dev/null || true
-fi
-if [ -d "build" ]; then
-    rm -rf build 2>/dev/null || sudo rm -rf build 2>/dev/null || true
-fi
+sudo rm -rf dist build 2>/dev/null || true
+rm -rf dist build 2>/dev/null || true
 
 # ── 4. PyInstaller .app bundle ────────────────────────────────────────────────
 echo "→ Running PyInstaller..."
-pyinstaller IndustrilityAgent.spec --noconfirm
+pyinstaller IndustrilityAgent.spec --noconfirm --clean
 
 if [ ! -d "$APP_PATH" ]; then
     echo "❌  PyInstaller did not produce ${APP_PATH}"
