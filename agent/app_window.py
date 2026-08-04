@@ -77,15 +77,28 @@ def _load_logo(size: tuple[int, int] = (340, 95)) -> Optional[ImageTk.PhotoImage
         return None
 
 
-def _next_friday() -> str:
-    """Return human-readable string for the next Friday 08:00."""
+def _next_monthly_scan() -> str:
+    """Return human-readable string for the next monthly scan (last Friday of the month at 08:00 AM local time)."""
+    import calendar
     now = datetime.now()
-    days_ahead = (4 - now.weekday()) % 7  # Friday = weekday 4
-    if days_ahead == 0 and now.hour >= config.SCAN_HOUR:
-        days_ahead = 7
-    nf = now + timedelta(days=days_ahead)
-    nf = nf.replace(hour=config.SCAN_HOUR, minute=0, second=0, microsecond=0)
-    return nf.strftime("%A %d %b at %H:%M")
+    year, month = now.year, now.month
+
+    def get_last_friday(y, m):
+        last_day = calendar.monthrange(y, m)[1]
+        last_dt = datetime(y, m, last_day, config.SCAN_HOUR, 0)
+        offset = (last_dt.weekday() - 4) % 7
+        return last_dt - timedelta(days=offset)
+
+    lf = get_last_friday(year, month)
+    if now >= lf:
+        if month == 12:
+            year += 1
+            month = 1
+        else:
+            month += 1
+        lf = get_last_friday(year, month)
+
+    return lf.strftime("%A %d %b %Y at %H:%M")
 
 
 # ─── Reusable Widgets ─────────────────────────────────────────────────────────
@@ -427,6 +440,29 @@ class Dashboard(tk.Frame):
             self._check_rows[key]   = dot
             self._check_detail[key] = detail
 
+        # ── System Specifications ──────────────────────────────────────────────
+        sys_card = tk.Frame(p, bg=BG_CARD)
+        sys_card.pack(fill="x", **pad)
+        sys_inner = tk.Frame(sys_card, bg=BG_CARD)
+        sys_inner.pack(fill="x", padx=24, pady=16)
+
+        SectionLabel(sys_inner, "System Specifications").pack(fill="x", pady=(0, 8))
+
+        sys_grid = tk.Frame(sys_inner, bg=BG_CARD)
+        sys_grid.pack(fill="x")
+
+        self.sys_cpu_lbl  = tk.Label(sys_grid, text="💻  Processor: —", font=F(10), bg=BG_CARD, fg=WHITE, anchor="w")
+        self.sys_cpu_lbl.pack(fill="x", pady=2)
+
+        self.sys_ram_lbl  = tk.Label(sys_grid, text="🧠  Memory (RAM): —", font=F(10), bg=BG_CARD, fg=WHITE, anchor="w")
+        self.sys_ram_lbl.pack(fill="x", pady=2)
+
+        self.sys_disk_lbl = tk.Label(sys_grid, text="💾  Storage Drive: —", font=F(10), bg=BG_CARD, fg=WHITE, anchor="w")
+        self.sys_disk_lbl.pack(fill="x", pady=2)
+
+        self.sys_sn_lbl   = tk.Label(sys_grid, text="🏷️  Device Serial / Host: —", font=F(10), bg=BG_CARD, fg=WHITE, anchor="w")
+        self.sys_sn_lbl.pack(fill="x", pady=2)
+
         # ── Action Buttons ─────────────────────────────────────────────────────
         btn_card = tk.Frame(p, bg=BG_CARD)
         btn_card.pack(fill="x", **pad)
@@ -466,6 +502,13 @@ class Dashboard(tk.Frame):
 
         # Load last report if exists
         self._load_existing_report()
+
+    def _start_countdown(self):
+        def _update():
+            next_time = _next_monthly_scan()
+            self.countdown_lbl.config(text=f"⏰  Next auto-scan: {next_time}")
+            self.after(60000, _update)  # Refresh every minute
+        _update()
 
     # ── Data / Scan ────────────────────────────────────────────────────────────
 
@@ -515,10 +558,24 @@ class Dashboard(tk.Frame):
     def _send_now(self):
         if self._scan_running:
             return
-        from . import auth
+        from . import auth, uploader
         if not auth.is_authenticated():
             self._prompt_grant_token()
             return
+
+        # Check monthly submission duplicate
+        emp_name = self.profile.get("full_name", "Employee")
+        already_sent, sent_date = uploader.check_monthly_submission(emp_name)
+        if already_sent:
+            from tkinter import messagebox
+            current_month_name = datetime.now().strftime("%B %Y")
+            confirm = messagebox.askyesno(
+                "Monthly Evidence Already Submitted",
+                f"Evidence for {current_month_name} was already submitted to Zoho WorkDrive on {sent_date}.\n\nDo you want to re-send new evidence for this month?",
+                parent=self
+            )
+            if not confirm:
+                return
 
         self._scan_running = True
         self.send_btn.set_loading(True,
@@ -536,6 +593,8 @@ class Dashboard(tk.Frame):
                     text="Uploading to Zoho WorkDrive...", fg=GOLD))
                 try:
                     url = uploader.upload_evidence(report)
+                    report["uploaded_url"] = url
+                    collector.save_report_locally(report)
                     self.after(0, lambda u=url: self._upload_done(True, u))
                 except Exception as e:
                     self.after(0, lambda err=str(e): self._upload_done(False, err))
@@ -550,9 +609,24 @@ class Dashboard(tk.Frame):
         overall = report.get("overall_status", "UNKNOWN")
         ts      = report.get("scan_timestamp", "")
         checks  = report.get("checks", {})
+        sys_info = report.get("system_info", {})
+
+        # System specs labels
+        cpu  = sys_info.get("cpu_name") or report.get("platform", "—")
+        ram  = sys_info.get("ram_total_gb")
+        disk = sys_info.get("disk_storage", {})
+        dt_total = disk.get("total_gb", 0)
+        dt_free  = disk.get("free_gb", 0)
+        sn   = report.get("serial_number", "—")
+        host = report.get("hostname", "—")
+
+        self.sys_cpu_lbl.config(text=f"💻  Processor: {cpu}")
+        self.sys_ram_lbl.config(text=f"🧠  Memory (RAM): {ram} GB" if ram else f"🧠  Memory: Active")
+        self.sys_disk_lbl.config(text=f"💾  Storage Drive: {dt_free} GB free of {dt_total} GB" if dt_total else f"💾  Storage: Active")
+        self.sys_sn_lbl.config(text=f"🏷️  Device Serial / Host: {host} (S/N: {sn})")
 
         # Score label
-        score_colour = GREEN if overall == "PASS" else (AMBER if score >= 50 else RED)
+        score_colour = GREEN if overall == "PASS" or score >= 70 else (AMBER if score >= 50 else RED)
         self.score_lbl.config(text=f"{score}%", fg=score_colour)
 
         # Progress bar
@@ -568,13 +642,14 @@ class Dashboard(tk.Frame):
                                                    fill=score_colour, outline="")
 
         # Overall badge
-        badge = "✅  PASS" if overall == "PASS" else "❌  FAIL"
+        badge = "✅  PASS" if overall == "PASS" or score >= 70 else "❌  FAIL"
         self.overall_lbl.config(text=badge, fg=score_colour)
 
-        # Timestamp
+        # Local Timezone Timestamp
         try:
             dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-            ts_str = dt.strftime("%d %b %Y  %H:%M UTC")
+            local_dt = dt.astimezone()
+            ts_str = local_dt.strftime("%d %b %Y %H:%M %Z")
         except Exception:
             ts_str = ts[:16].replace("T", " ") if ts else "—"
         self.scan_ts_lbl.config(text=f"Last scan: {ts_str}")

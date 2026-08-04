@@ -115,3 +115,42 @@ def upload_evidence(report: dict) -> str:
 
     logger.info(f"Upload complete: {url}")
     return url
+
+
+def check_monthly_submission(employee_name: str) -> tuple[bool, str]:
+    """
+    Check if evidence for the current month (YYYY-MM) has already been uploaded.
+    Returns (already_uploaded: bool, upload_date_str: str).
+    """
+    current_month = date.today().strftime("%Y-%m")
+    current_month_prefix = f"evidence_{current_month}"
+
+    # 1. Fast local check
+    if os.path.exists(config.LAST_REPORT_FILE):
+        try:
+            with open(config.LAST_REPORT_FILE, encoding="utf-8") as f:
+                rep = json.load(f)
+                ts = rep.get("scan_timestamp", "")
+                if ts and ts.startswith(current_month) and rep.get("uploaded_url"):
+                    dt_str = ts[:10]
+                    return True, dt_str
+        except Exception:
+            pass
+
+    # 2. Remote check via Zoho API
+    try:
+        folder_id = _get_or_create_employee_folder(employee_name)
+        url = f"{config.ZOHO_WORKDRIVE_API}/files/{folder_id}/files"
+        resp = requests.get(url, headers=_headers(), timeout=15)
+        if resp.status_code == 200:
+            files = resp.json().get("data", [])
+            for item in files:
+                name = item.get("attributes", {}).get("name", "")
+                if name.startswith(current_month_prefix):
+                    created = item.get("attributes", {}).get("created_time", "")[:10] or date.today().strftime("%Y-%m-%d")
+                    return True, created
+    except Exception as e:
+        logger.debug(f"Remote folder check error: {e}")
+
+    return False, ""
+

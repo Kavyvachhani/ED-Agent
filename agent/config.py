@@ -34,8 +34,9 @@ BUNDLE_ID          = "com.industrility.agent"
 # OAuth callback port
 OAUTH_PORT         = 8765
 
-# ─── Scheduler ────────────────────────────────────────────────────────────────
-SCAN_DAY_OF_WEEK   = "fri"
+# ─── Scheduler (Monthly - Last Friday at 08:00 AM) ────────────────────────────
+SCAN_SCHEDULE      = "monthly"
+SCAN_DAY           = "last fri"
 SCAN_HOUR          = 8
 SCAN_MINUTE        = 0
 

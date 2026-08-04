@@ -39,14 +39,14 @@ class ScanScheduler:
     def start(self):
         """Start the scheduler (non-blocking background thread)."""
         trigger = CronTrigger(
-            day_of_week=config.SCAN_DAY_OF_WEEK,
+            day=config.SCAN_DAY,
             hour=config.SCAN_HOUR,
             minute=config.SCAN_MINUTE,
         )
         self._job = self._scheduler.add_job(
             self._run_scan,
             trigger=trigger,
-            id="weekly_security_scan",
+            id="monthly_security_scan",
             replace_existing=True,
         )
         self._scheduler.start()
