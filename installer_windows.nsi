@@ -2,19 +2,6 @@
 ; installer_windows.nsi — NSIS installer for Industrility Agent
 ;
 ; Produces:  dist\IndustrilityAgentSetup.exe
-;
-; What the installer does:
-;   • Installs to  C:\Program Files\Industrility\IndustrilityAgent\
-;   • Creates Start Menu folder: "Industrility Agent"
-;   • Creates Desktop shortcut
-;   • Writes  HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall  entry
-;     → App appears in Settings → Apps & Features with logo + publisher info
-;   • Writes  HKCU\...\Run  key so the agent starts at Windows login
-;   • Bundles a proper uninstaller (Remove Programs entry + shortcut in Start Menu)
-;
-; REQUIREMENTS:
-;   NSIS 3.x  https://nsis.sourceforge.io/Download
-;   After installing NSIS, run:  makensis installer_windows.nsi
 ; ═══════════════════════════════════════════════════════════════════════════════
 
 Unicode True
@@ -47,15 +34,20 @@ RequestExecutionLevel   admin                ; UAC prompt for Program Files
 BrandingText            "${COMPANY} v${VERSION}"
 SetCompressor           /SOLID lzma
 
-;── MUI2 Pages ───────────────────────────────────────────────────────────────────
-; Installer pages
+;── MUI2 Settings & Customization (MUST be defined BEFORE MUI_PAGE_* macros) ────
+!define MUI_ICON                    "assets\icon.ico"
+!define MUI_UNICON                  "assets\icon.ico"
+!define MUI_WELCOMEPAGE_TITLE       "Welcome to ${APP_NAME} Setup"
+!define MUI_WELCOMEPAGE_TEXT        "This wizard will install ${APP_NAME} ${VERSION} on your computer.$\r$\n$\r$\nThe agent monitors your device's security compliance and reports to your organisation's Industrility dashboard.$\r$\n$\r$\nClick Next to continue."
+!define MUI_FINISHPAGE_TITLE        "Installation Complete"
+!define MUI_FINISHPAGE_RUN          "$INSTDIR\${APP_EXE}"
+!define MUI_FINISHPAGE_RUN_TEXT     "Launch Industrility Agent now"
+
+;── MUI2 Page Layout ─────────────────────────────────────────────────────────────
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "LICENSE.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
-!define MUI_FINISHPAGE_RUN          "$INSTDIR\${APP_EXE}"
-!define MUI_FINISHPAGE_RUN_TEXT     "Launch Industrility Agent now"
-!define MUI_FINISHPAGE_SHOWREADME   ""
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
@@ -64,16 +56,6 @@ SetCompressor           /SOLID lzma
 !insertmacro MUI_UNPAGE_FINISH
 
 !insertmacro MUI_LANGUAGE "English"
-
-;── MUI Customization ────────────────────────────────────────────────────────────
-!define MUI_ICON                    "assets\icon.ico"
-!define MUI_UNICON                  "assets\icon.ico"
-!define MUI_WELCOMEPAGE_TITLE       "Welcome to ${APP_NAME} Setup"
-!define MUI_WELCOMEPAGE_TEXT        "This wizard will install ${APP_NAME} ${VERSION} on your computer.$\r$\n$\r$\nThe agent monitors your device's security compliance and reports to your organisation's Industrility dashboard.$\r$\n$\r$\nClick Next to continue."
-!define MUI_FINISHPAGE_TITLE        "Installation Complete"
-!define MUI_HEADERIMAGE
-!define MUI_HEADERIMAGE_BITMAP      "assets\logo_production.png"
-!define MUI_HEADERIMAGE_RIGHT
 
 ;── Version resource (shown in file Properties) ───────────────────────────────────
 VIProductVersion                    "${VERSION}.0"
