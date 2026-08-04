@@ -36,6 +36,7 @@ Unicode True
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "x64.nsh"
+!include "FileFunc.nsh"
 
 ;── General settings ─────────────────────────────────────────────────────────────
 Name                    "${APP_NAME}"
