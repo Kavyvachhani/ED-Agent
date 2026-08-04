@@ -9,7 +9,7 @@ Unicode True
 ;── Metadata ────────────────────────────────────────────────────────────────────
 !define APP_NAME        "Industrility Agent"
 !define APP_EXE         "IndustrilityAgent.exe"
-!define COMPANY         "Industrility"
+!define COMPANY         "Kavy Vachhani"
 !define VERSION         "1.0.0"
 !define BUNDLE_ID       "com.industrility.agent"
 !define INSTALL_DIR     "$PROGRAMFILES64\Industrility\IndustrilityAgent"
@@ -31,7 +31,7 @@ OutFile                 "dist\IndustrilityAgentSetup.exe"
 InstallDir              "${INSTALL_DIR}"
 InstallDirRegKey        HKLM "${REG_UNINSTALL}" "InstallLocation"
 RequestExecutionLevel   admin                ; UAC prompt for Program Files
-BrandingText            "${COMPANY} v${VERSION}"
+BrandingText            "Industrility Agent v${VERSION} — ${COMPANY}"
 SetCompressor           /SOLID lzma
 
 ;── MUI2 Settings & Customization (MUST be defined BEFORE MUI_PAGE_* macros) ────
