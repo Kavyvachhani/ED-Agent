@@ -518,18 +518,40 @@ class Dashboard(tk.Frame):
         )
         self.countdown_lbl.pack(side="left")
 
+        footer_btns = tk.Frame(info, bg=BG)
+        footer_btns.pack(side="right")
+
         if self.on_logout:
             logout_btn = tk.Button(
-                info, text="🚪  Sign Out", font=F(10, "bold"),
-                bg=BG, fg=RED, activebackground=BG, activeforeground="#FF6B6B",
+                footer_btns, text="🚪  Sign Out", font=F(10, "bold"),
+                bg=BG, fg=GREY, activebackground=BG, activeforeground=WHITE,
                 relief="flat", bd=0, cursor="hand2", command=self.on_logout,
             )
-            logout_btn.pack(side="right")
+            logout_btn.pack(side="left", padx=(0, 12))
+
+        uninst_btn = tk.Button(
+            footer_btns, text="🗑️  Uninstall", font=F(10, "bold"),
+            bg=BG, fg=RED, activebackground=BG, activeforeground="#FF6B6B",
+            relief="flat", bd=0, cursor="hand2", command=self._confirm_uninstall,
+        )
+        uninst_btn.pack(side="left")
 
         tk.Frame(p, bg=BG, height=20).pack()  # bottom padding
 
         # Load last report if exists
         self._load_existing_report()
+
+    def _confirm_uninstall(self):
+        from tkinter import messagebox
+        confirm = messagebox.askyesno(
+            "Uninstall Industrility Agent",
+            "Are you sure you want to completely uninstall Industrility Agent?\n\nThis will stop automatic compliance scans and remove all local data from this device.",
+            icon="warning",
+            parent=self
+        )
+        if confirm:
+            from . import uninstaller
+            uninstaller.perform_uninstall()
 
     def _start_countdown(self):
         def _update():

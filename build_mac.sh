@@ -101,6 +101,8 @@ STAGE_DIR="build/pkg_stage"
 rm -rf "$STAGE_DIR"
 mkdir -p "$STAGE_DIR"
 cp -R "$APP_PATH" "$STAGE_DIR/"
+cp "Uninstall Industrility Agent.command" "$STAGE_DIR/"
+chmod +x "$STAGE_DIR/Uninstall Industrility Agent.command"
 
 pkgbuild \
     --root "$STAGE_DIR" \
