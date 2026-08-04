@@ -5,13 +5,7 @@ REM
 REM OUTPUT:
 REM   dist\IndustrilityAgent.exe        — raw portable executable (PyInstaller)
 REM   dist\IndustrilityAgentSetup.exe   — proper Windows installer (NSIS)
-REM       Installs to Program Files, adds Start Menu, Desktop shortcut,
-REM       Apps & Features entry, and auto-start at login.
-REM
-REM REQUIREMENTS (run once, in any order):
-REM   1. Python 3.10+ from https://python.org  (check "Add to PATH")
-REM   2. NSIS 3.x     from https://nsis.sourceforge.io/Download
-REM      (makensis.exe must be on PATH, or placed in  C:\Program Files (x86)\NSIS\)
+REM   dist\install_app.bat              — fallback double-click installer (batch)
 REM ═══════════════════════════════════════════════════════════════════════════════
 
 setlocal EnableDelayedExpansion
@@ -64,17 +58,47 @@ if not exist "dist\IndustrilityAgent.exe" (
 )
 echo  ✔  PyInstaller: dist\IndustrilityAgent.exe
 
-REM ── 6. NSIS Installer ────────────────────────────────────────────────────────
+REM ── 6. Create Fallback One-Click Installer (install_app.bat) ─────────────────
+(
+echo @echo off
+echo :: Industrility Agent One-Click Installer
+echo net session ^>nul 2^>^&1
+echo if %%errorlevel%% neq 0 ^(
+echo     echo Requesting Administrator privileges...
+echo     powershell -Command "Start-Process '%%~f0' -Verb RunAs"
+echo     exit /b
+echo ^)
+echo echo Installing Industrility Agent to Program Files...
+echo set "TARGET=C:\Program Files\Industrility\IndustrilityAgent"
+echo if not exist "%%TARGET%%" mkdir "%%TARGET%%"
+echo copy /y "%%~dp0IndustrilityAgent.exe" "%%TARGET%%\IndustrilityAgent.exe" ^>nul
+echo echo Creating Start Menu ^& Desktop shortcuts...
+echo set "SM=C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Industrility Agent"
+echo if not exist "%%SM%%" mkdir "%%SM%%"
+echo powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%%SM%%\Industrility Agent.lnk'); $s.TargetPath='%%TARGET%%\IndustrilityAgent.exe'; $s.Save()"
+echo powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%%PUBLIC%%\Desktop\Industrility Agent.lnk'); $s.TargetPath='%%TARGET%%\IndustrilityAgent.exe'; $s.Save()"
+echo echo Registering in Windows Apps ^& Features...
+echo reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\com.industrility.agent" /v "DisplayName" /d "Industrility Agent" /f /reg:64 ^>nul
+echo reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\com.industrility.agent" /v "DisplayVersion" /d "1.0.0" /f /reg:64 ^>nul
+echo reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\com.industrility.agent" /v "Publisher" /d "Industrility" /f /reg:64 ^>nul
+echo reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\com.industrility.agent" /v "InstallLocation" /d "%%TARGET%%" /f /reg:64 ^>nul
+echo reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "IndustrilityAgent" /d "\"%%TARGET%%\IndustrilityAgent.exe\"" /f ^>nul
+echo echo Launching Industrility Agent...
+echo start "" "%%TARGET%%\IndustrilityAgent.exe"
+echo echo.
+echo ✅ Installation Complete! Installed to Program Files, Start Menu, Desktop, and Apps ^& Features.
+echo pause
+) > "dist\install_app.bat"
+
+REM ── 7. NSIS Installer ────────────────────────────────────────────────────────
 echo  → Looking for NSIS (makensis.exe)...
 
-REM Try PATH first
 where makensis >nul 2>&1
 if not errorlevel 1 (
     set MAKENSIS=makensis
     goto :found_nsis
 )
 
-REM Try common install locations
 set NSIS_PATHS=^
     "C:\Program Files (x86)\NSIS\makensis.exe" ^
     "C:\Program Files\NSIS\makensis.exe"
@@ -86,16 +110,14 @@ for %%P in (%NSIS_PATHS%) do (
     )
 )
 
-REM NSIS not found — warn and exit gracefully
 echo.
-echo  ⚠️  NSIS not found — skipping installer creation.
-echo     To build the proper Windows installer:
-echo       1. Download NSIS from  https://nsis.sourceforge.io/Download
-echo       2. Install it (adds makensis to PATH automatically)
-echo       3. Re-run this script
+echo  ⚠️  NSIS not found — created fallback installer script 'dist\install_app.bat'.
+echo     You have 2 options:
+echo       Option A (Quick): Double-click  dist\install_app.bat  to install the app to Program Files & Start Menu.
+echo       Option B (Single EXE): Download NSIS from https://nsis.sourceforge.io/Download, install it, and re-run build_windows.bat to create dist\IndustrilityAgentSetup.exe.
 echo.
-echo  ✔  Portable .exe is at:  dist\IndustrilityAgent.exe
-echo     (Users can run this directly, but it won't appear in Apps and Features)
+echo  ✔  Executable created: dist\IndustrilityAgent.exe
+echo  ✔  Installer script created: dist\install_app.bat
 echo.
 pause
 exit /b 0
@@ -112,18 +134,12 @@ if not exist "dist\IndustrilityAgentSetup.exe" (
 )
 echo  ✔  Installer: dist\IndustrilityAgentSetup.exe
 
-REM ── 7. Summary ───────────────────────────────────────────────────────────────
 echo.
 echo  ╔══════════════════════════════════════════════════════════════════════╗
 echo  ║  ✅  BUILD COMPLETE                                                  ║
 echo  ╠══════════════════════════════════════════════════════════════════════╣
 echo  ║  Portable .exe   →  dist\IndustrilityAgent.exe                       ║
 echo  ║  Installer       →  dist\IndustrilityAgentSetup.exe  ← share this   ║
-echo  ╠══════════════════════════════════════════════════════════════════════╣
-echo  ║  How to distribute:                                                  ║
-echo  ║    Share IndustrilityAgentSetup.exe with employees.                  ║
-echo  ║    They double-click it → Next → Install.                            ║
-echo  ║    Appears in Start Menu, Desktop, and Apps and Features.            ║
-echo  ╚══════════════════════════════════════════════════════════════════════╝
+echo  ╚══════════════════════════════════════════════════════════════════╝
 echo.
 pause
