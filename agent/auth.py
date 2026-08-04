@@ -12,7 +12,7 @@ import json
 import logging
 import os
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from . import config
 
@@ -23,7 +23,7 @@ TOKEN_FILE = os.path.join(config._app_data_dir(), "tokens.json")
 
 
 def _save_tokens(access_token: str, refresh_token: str, expires_in: int):
-    expiry = (datetime.utcnow() + timedelta(seconds=expires_in - 60)).isoformat()
+    expiry = (datetime.now(timezone.utc) + timedelta(seconds=expires_in - 60)).isoformat()
     data = {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -126,7 +126,7 @@ def get_valid_access_token() -> str:
     if access and expiry_str:
         try:
             expiry = datetime.fromisoformat(expiry_str)
-            if datetime.utcnow() < expiry:
+            if datetime.now(timezone.utc) < expiry:
                 return access  # Still valid
         except ValueError:
             pass
