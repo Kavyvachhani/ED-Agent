@@ -9,20 +9,19 @@ import sys
 # Self Client (created at https://api-console.zoho.com)
 # Scopes used: WorkDrive.files.ALL,WorkDrive.workspace.ALL
 
-ZOHO_CLIENT_ID     = "1000.9DT21VWZEXZKOISEJKUTWTDW8KYDFL"
-ZOHO_CLIENT_SECRET = "4882c44aebeb1f9b01c071eb4d2929ead0d67f481b"
+ZOHO_CLIENT_ID     = os.environ.get("ZOHO_CLIENT_ID", "1000.9DT21VWZEXZKOISEJKUTWTDW8KYDFL")
+ZOHO_CLIENT_SECRET = os.environ.get("ZOHO_CLIENT_SECRET", "4882c44aebeb1f9b01c071eb4d2929ead0d67f481b")
 ZOHO_SCOPES        = "WorkDrive.files.ALL,WorkDrive.workspace.ALL"
 
-ZOHO_GRANT_TOKEN   = ""
-DEFAULT_REFRESH_TOKEN = "1000.488bc2a1023b471ae04a7a31047811b1.cd51cb78fd99b005810b3abf3b5807f8"
+ZOHO_GRANT_TOKEN   = os.environ.get("ZOHO_GRANT_TOKEN", "")
+DEFAULT_REFRESH_TOKEN = os.environ.get("ZOHO_REFRESH_TOKEN", "1000.488bc2a1023b471ae04a7a31047811b1.cd51cb78fd99b005810b3abf3b5807f8")
 
 # US datacenter
-ZOHO_ACCOUNTS_URL  = "https://accounts.zoho.com"
-ZOHO_WORKDRIVE_API = "https://workdrive.zoho.com/api/v1"
+ZOHO_ACCOUNTS_URL  = os.environ.get("ZOHO_ACCOUNTS_URL", "https://accounts.zoho.com")
+ZOHO_WORKDRIVE_API = os.environ.get("ZOHO_WORKDRIVE_API", "https://workdrive.zoho.com/api/v1")
 
 # ─── WorkDrive Target Folder ──────────────────────────────────────────────────
-# Extracted from: https://workdrive.zoho.com/folder/cc037469ff9423f25482382fd4f2e76724628
-COMPANY_FOLDER_ID  = "cc037469ff9423f25482382fd4f2e76724628"
+COMPANY_FOLDER_ID  = os.environ.get("ZOHO_COMPANY_FOLDER_ID", "cc037469ff9423f25482382fd4f2e76724628")
 
 # ─── Application Metadata ─────────────────────────────────────────────────────
 APP_NAME           = "IndustrilityAgent"

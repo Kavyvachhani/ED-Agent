@@ -1,94 +1,140 @@
-# Employee Device Security Agent
+# Industrility Device Security Agent
 
-A cross-platform desktop agent that collects SOC2 audit evidence from employee devices and uploads structured JSON reports to Zoho WorkDrive.
+![Industrility Logo](assets/logo_header_clean.png)
 
-## Features
+A cross-platform corporate desktop agent built with Python and Tkinter for continuous endpoint security monitoring, compliance posture auditing, and automated evidence submission to Zoho WorkDrive.
 
-- 🛡️ **System tray icon** — always visible, shows compliance status (green/yellow/red)
-- 📋 **In-app registration** — employee fills their profile on first launch
-- 🔐 **Zoho OAuth 2.0** — employees log in with their own Zoho account (tokens stored in OS keychain)
-- 📊 **7 security checks** — disk encryption, firewall, screen lock, OS patches, antivirus, secure boot, password policy
-- ☁️ **Auto-upload** — evidence JSON uploaded to `SOC2-Evidence/{Employee Name}/` in WorkDrive
-- ⏰ **Friday auto-scan** — runs every Friday at 08:00 local time
-- 🖥️ **Windows + macOS** — native checks for BitLocker/FileVault, Windows Firewall/macOS Firewall, etc.
+---
 
-## Quick Start (Development)
+## 🌟 Key Features
 
-```bash
-# 1. Clone and install
-pip install -r requirements.txt
+- **Automated Security Compliance Checks**:
+  - 🔒 **Disk Encryption**: Monitors BitLocker (Windows) and FileVault (macOS) posture.
+  - 🛡️ **Firewall Status**: Audits system firewall status across domain, private, and public profiles.
+  - ⏱️ **Screen Lock**: Verifies screen saver lock timeouts (threshold: <= 15 mins).
+  - 🔄 **OS Patch Currency**: Checks system build numbers and update timestamps (threshold: <= 30 days).
+  - 🛡️ **Antivirus & Endpoint Protection**: Detects active antivirus solutions.
+  - 🔐 **Secure Boot & SIP**: Audits UEFI Secure Boot (Windows) and System Integrity Protection (macOS).
+  - 🔑 **Password Policy**: Ensures minimum password length enforcement (>= 8 chars).
 
-# 2. Configure (see ZOHO_SETUP.md)
-# Edit agent/config.py with your Zoho Client ID and WorkDrive Folder ID
+- **Hardware & System Inventory**:
+  - Collects Processor details, RAM capacity (GB), Storage Drive space (GB total/free), Hostname, and Device Serial Number.
 
-# 3. Run
-python run.py
-```
+- **Automated Evidence Upload**:
+  - Integrates with **Zoho WorkDrive API** (OAuth 2.0).
+  - Automatically creates employee evidence folders (`{Employee Full Name}`) and uploads monthly compliance JSON reports.
+  - Features intelligent monthly submission tracking to prevent accidental duplicate uploads.
 
-## Building
+- **Background Scheduling**:
+  - Runs automated scans on a configurable schedule (default: Last Friday of each month at 08:00 AM local time).
+  - Registers system background daemons (**LaunchAgent** on macOS, **Registry Startup** on Windows).
 
-See [ZOHO_SETUP.md](ZOHO_SETUP.md) for full admin + build instructions.
+- **Modern Dark Theme UI**:
+  - Dark mode interface styled with Industrility brand colors.
+  - Includes password show/hide eye toggle (`👁️`/`🙈`).
+  - Native timezone-aware scan timestamps for multi-region teams.
+  - Integrated 1-click **Uninstall / Remove Agent** functionality.
 
-| Platform | Command          | Output                           |
-|----------|------------------|----------------------------------|
-| Windows  | `build_windows.bat` | `dist/DeviceSecurityAgent.exe` |
-| macOS    | `./build_mac.sh` | `dist/DeviceSecurityAgent.app`   |
+---
 
-## Evidence JSON Format
+## 🏗️ System Architecture
 
-```json
-{
-  "employee_email": "john@company.com",
-  "employee_name": "John Doe",
-  "employee_id": "EMP-001",
-  "department": "Engineering",
-  "hostname": "LAPTOP-XYZ",
-  "serial_number": "C02...",
-  "platform": "Windows 11 22H2",
-  "scan_timestamp": "2025-07-25T08:00:00+00:00",
-  "scan_id": "uuid4",
-  "agent_version": "1.0.0",
-  "checks": {
-    "disk_encryption": { "status": "compliant",     "detail": "BitLocker enabled on C:" },
-    "firewall":        { "status": "compliant",     "detail": "Firewall ON (Domain, Private, Public)" },
-    "screen_lock":     { "status": "compliant",     "detail": "Screen locks after 5 min with password" },
-    "os_patch":        { "status": "compliant",     "detail": "Windows 11 22H2, last updated 2025-07-20" },
-    "antivirus":       { "status": "compliant",     "detail": "Windows Defender (ON)" },
-    "secure_boot":     { "status": "compliant",     "detail": "Secure Boot enabled" },
-    "password_policy": { "status": "non_compliant", "detail": "Minimum password length: 6" }
-  },
-  "compliance_score": 86,
-  "overall_status": "PASS"
-}
-```
-
-## File Locations
-
-| File | Path |
-|------|------|
-| Profile | `%APPDATA%\DeviceSecurityAgent\profile.json` (Win) / `~/Library/Application Support/DeviceSecurityAgent/profile.json` (Mac) |
-| Last Report | Same dir, `last_report.json` |
-| Logs | Same dir, `agent.log` |
-
-## Project Structure
-
-```
+```text
 Employe_Device_plugin/
-├── agent/
-│   ├── __init__.py
-│   ├── main.py          # Entry point + tray icon
-│   ├── auth.py          # Zoho OAuth PKCE
-│   ├── registration.py  # Employee registration form (tkinter)
-│   ├── collector.py     # Device security checks
-│   ├── uploader.py      # Zoho WorkDrive upload
-│   ├── scheduler.py     # Friday auto-scan
-│   └── config.py        # Configuration (edit before distributing)
-├── assets/
-│   └── icon.png
-├── run.py
-├── requirements.txt
-├── build_windows.bat
-├── build_mac.sh
-├── ZOHO_SETUP.md        # ← Admin setup guide
-└── README.md
+├── agent/                  # Core application source code
+│   ├── app_window.py       # Tkinter graphical user interface (Login & Dashboard)
+│   ├── auth.py             # Zoho OAuth 2.0 authentication manager
+│   ├── collector.py        # OS security checks and system hardware collector
+│   ├── config.py           # Application settings and environment configuration
+│   ├── main.py             # Application entry point and daemon setup
+│   ├── registration.py     # Employee profile persistence layer
+│   ├── scheduler.py        # Background scan scheduler (APScheduler)
+│   ├── uninstaller.py      # Programmatic in-app uninstallation engine
+│   └── uploader.py         # Zoho WorkDrive evidence upload engine
+├── assets/                 # Brand logos, master application icons (.icns, .ico, .png)
+├── build_mac.sh            # macOS build pipeline (PyInstaller + codesign + pkgbuild)
+├── build_windows.bat       # Windows build pipeline (PyInstaller + NSIS Installer)
+├── entitlements.plist      # macOS security entitlements
+├── file_version_info.txt   # Windows executable version metadata
+├── installer_windows.nsi   # Windows NSIS Installer script
+├── pkg_scripts/            # macOS installer post-installation scripts
+├── prepare_icons.py        # Multi-platform icon generator script
+├── requirements.txt        # Python dependency manifest
+├── run.py                  # CLI runner script
+├── uninstall_mac.sh        # Standalone macOS uninstaller script
+└── uninstall_windows.bat    # Standalone Windows uninstaller script
 ```
+
+---
+
+## 🚀 Installation & Distribution
+
+###  macOS (`IndustrilityAgent.pkg`)
+1. Download **`IndustrilityAgent.pkg`** from the latest release or `dist/` directory.
+2. Double-click the installer and complete the setup wizard.
+3. The app installs to `/Applications/IndustrilityAgent.app` and registers a background startup agent.
+
+*To uninstall on macOS:*
+- Click **`🗑️ Uninstall`** inside the app UI, or
+- Double-click **`Uninstall Industrility Agent.command`** in `/Applications`, or
+- Run `bash uninstall_mac.sh` in Terminal.
+
+---
+
+### 🪟 Windows (`IndustrilityAgentSetup.exe`)
+1. Download **`IndustrilityAgentSetup.exe`** from the latest release or `dist/` directory.
+2. Run the installer wizard (installs to `C:\Program Files\Industrility Agent`).
+3. Shortcut created in Start Menu. Registered under Windows **Apps & Features**.
+
+*To uninstall on Windows:*
+- Go to **Windows Settings → Apps & Features → Uninstall**, or
+- Click **`🗑️ Uninstall`** inside the app UI, or
+- Run `uninstall_windows.bat`.
+
+---
+
+## 🛠️ Building from Source
+
+### Prerequisites
+- Python 3.10+
+- Virtual environment (`venv`)
+
+### 1. Setup Virtual Environment
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Build macOS Package (.app & .pkg)
+```bash
+bash build_mac.sh
+```
+*Output generated in `dist/IndustrilityAgent.pkg`.*
+
+### 3. Build Windows Package (.exe)
+*(Must be executed on Windows with NSIS installed)*
+```cmd
+build_windows.bat
+```
+*Output generated in `dist\IndustrilityAgentSetup.exe`.*
+
+---
+
+## ⚙️ Configuration & Environment Variables
+
+Key parameters can be overridden using environment variables:
+
+| Environment Variable | Description | Default |
+| :--- | :--- | :--- |
+| `ZOHO_CLIENT_ID` | Zoho API OAuth Client ID | Built-in |
+| `ZOHO_CLIENT_SECRET` | Zoho API OAuth Client Secret | Built-in |
+| `ZOHO_COMPANY_FOLDER_ID` | Zoho WorkDrive Target Folder ID | Built-in |
+| `ZOHO_ACCOUNTS_URL` | Zoho OAuth Datacenter Base URL | `https://accounts.zoho.com` |
+| `ZOHO_WORKDRIVE_API` | Zoho WorkDrive API Endpoint | `https://workdrive.zoho.com/api/v1` |
+
+---
+
+## 📄 License
+
+Distributed under the terms of the MIT License. See [LICENSE.txt](LICENSE.txt) for more details.
