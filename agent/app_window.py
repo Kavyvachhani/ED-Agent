@@ -327,9 +327,12 @@ class LoginScreen(tk.Frame):
             "employee_id": self.f_email.get().split('@')[0].upper(),
         }
 
-        from . import registration
-        registration._save_profile(profile)
-        self.on_login_success(profile)
+        try:
+            from . import registration
+            registration._save_profile(profile)
+            self.on_login_success(profile)
+        except Exception as e:
+            self.status_lbl.config(text=f"Login failed: {e}", fg=RED)
 
     def _login_error(self, msg: str):
         self.btn.set_loading(False, "", "🔐  Connect with Zoho WorkDrive")
@@ -709,7 +712,7 @@ class Dashboard(tk.Frame):
         self._update_countdown()
 
     def _update_countdown(self):
-        nf = _next_friday()
+        nf = _next_monthly_scan()
         self.countdown_lbl.config(text=f"⏰  Next auto-scan: {nf}")
         # Refresh every 60 seconds
         self.after(60_000, self._update_countdown)
