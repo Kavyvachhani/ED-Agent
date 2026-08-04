@@ -44,12 +44,17 @@ python3 prepare_icons.py
 
 # ── 3. Clean previous builds ──────────────────────────────────────────────────
 echo "→ Cleaning previous builds..."
+mkdir -p .git/trash 2>/dev/null || true
 if [ -d "dist" ]; then
-    rm -rf dist 2>/dev/null || (mv dist "dist_old_$$" 2>/dev/null && mkdir dist) || true
+    rm -rf dist 2>/dev/null || (mv dist ".git/trash/dist_old_$$" 2>/dev/null && mkdir dist) || true
 fi
 if [ -d "build" ]; then
-    rm -rf build 2>/dev/null || (mv build "build_old_$$" 2>/dev/null && mkdir build) || true
+    rm -rf build 2>/dev/null || (mv build ".git/trash/build_old_$$" 2>/dev/null && mkdir build) || true
 fi
+
+# Prevent macOS Spotlight from indexing temporary build binaries
+mkdir -p dist build
+touch dist/.metadata_never_index build/.metadata_never_index
 
 # ── 4. PyInstaller .app bundle ────────────────────────────────────────────────
 echo "→ Running PyInstaller..."
