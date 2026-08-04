@@ -64,9 +64,11 @@ def _asset(filename: str) -> str:
 
 
 def _load_logo(size: tuple[int, int] = (340, 95)) -> Optional[ImageTk.PhotoImage]:
-    """Load and resize the high-resolution Industriility logo cleanly."""
+    """Load and resize the high-resolution Industrility logo cleanly."""
     try:
-        path = _asset("logo_header_clean.png")
+        path = _asset("logo_clean.png")
+        if not os.path.exists(path):
+            path = _asset("Industirlity.png")
         if not os.path.exists(path):
             path = _asset("logo_production_brand.png")
         img = Image.open(path).convert("RGBA")
@@ -141,30 +143,51 @@ class SectionLabel(tk.Label):
 
 
 class EntryField(tk.Frame):
-    """Dark-styled labelled entry."""
+    """Dark-styled labelled entry with optional show/hide password toggle."""
     def __init__(self, parent, label: str, placeholder: str = "", password: bool = False):
         super().__init__(parent, bg=BG)
         tk.Label(self, text=label, font=F(10), bg=BG, fg=GREY, anchor="w").pack(fill="x")
         self.var = tk.StringVar()
-        show = "*" if password else ""
+        self.is_password = password
+        self.show_password = False
+
+        self.box = tk.Frame(self, bg=BG_INPUT, highlightthickness=1, highlightcolor=GOLD, highlightbackground=BORDER)
+        self.box.pack(fill="x", ipady=2)
+
+        show_char = "*" if password else ""
         self.entry = tk.Entry(
-            self, textvariable=self.var,
+            self.box, textvariable=self.var,
             font=F(12), bg=BG_INPUT, fg=WHITE,
             insertbackground=WHITE, relief="flat", bd=0,
-            show=show,
-            highlightthickness=1,
-            highlightcolor=GOLD,
-            highlightbackground=BORDER,
+            show=show_char,
         )
-        self.entry.pack(fill="x", ipady=9)
+        self.entry.pack(side="left", fill="x", expand=True, padx=8, ipady=6)
+
+        if password:
+            self.toggle_btn = tk.Button(
+                self.box, text="👁️", font=F(11),
+                bg=BG_INPUT, fg=GREY, activebackground=BG_INPUT, activeforeground=WHITE,
+                relief="flat", bd=0, cursor="hand2", command=self._toggle_password,
+            )
+            self.toggle_btn.pack(side="right", padx=6)
+
         self._ph = placeholder
         self._ph_active = False
-        if placeholder:
+        if placeholder and not password:
             self._set_placeholder()
         self.entry.bind("<FocusIn>",  self._clear_ph)
         self.entry.bind("<FocusOut>", self._set_ph_if_empty)
         self.err = tk.Label(self, text="", font=F(9), bg=BG, fg=RED, anchor="w")
         self.err.pack(fill="x")
+
+    def _toggle_password(self):
+        self.show_password = not self.show_password
+        if self.show_password:
+            self.entry.config(show="")
+            self.toggle_btn.config(text="🙈")
+        else:
+            self.entry.config(show="*")
+            self.toggle_btn.config(text="👁️")
 
     def _set_placeholder(self):
         self.entry.insert(0, self._ph)
@@ -187,11 +210,11 @@ class EntryField(tk.Frame):
 
     def set_error(self, msg: str):
         self.err.config(text=msg)
-        self.entry.config(highlightbackground=RED)
+        self.box.config(highlightbackground=RED)
 
     def clear_error(self):
         self.err.config(text="")
-        self.entry.config(highlightbackground=BORDER)
+        self.box.config(highlightbackground=BORDER)
 
 
 # ─── Login / Registration Screen ─────────────────────────────────────────────
@@ -253,9 +276,9 @@ class LoginScreen(tk.Frame):
 
         SectionLabel(inner, "Industrility Employee Login").pack(fill="x", pady=(0, 12))
 
-        self.f_name  = EntryField(inner, "Full Name",            "e.g. Kavy Vachhani")
+        self.f_name  = EntryField(inner, "Full Name",            "e.g. Employee Name")
         self.f_email = EntryField(inner, "Industrility Email",  "user@industrility.com")
-        self.f_pass  = EntryField(inner, "Password",             "••••••••", password=True)
+        self.f_pass  = EntryField(inner, "Password",             "", password=True)
         self.f_dept  = EntryField(inner, "Department",           "e.g. Engineering")
 
         for field in [self.f_name, self.f_email, self.f_pass, self.f_dept]:
