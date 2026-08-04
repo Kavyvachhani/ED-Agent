@@ -119,9 +119,10 @@ class GoldButton(tk.Button):
 
 class SectionLabel(tk.Label):
     def __init__(self, parent, text, **kwargs):
+        parent_bg = parent.cget("bg") if hasattr(parent, "cget") else BG
         super().__init__(
             parent, text=text.upper(),
-            font=F(9, "bold"), bg=BG, fg=GREY_DIM,
+            font=F(9, "bold"), bg=kwargs.pop("bg", parent_bg), fg=GREY_DIM,
             anchor="w", **kwargs,
         )
 
@@ -557,6 +558,8 @@ class Dashboard(tk.Frame):
         # Progress bar
         self.progress_canvas.update_idletasks()
         w = self.progress_canvas.winfo_width()
+        if w < 10:
+            w = 400
         self.progress_canvas.delete("all")
         self.progress_canvas.create_rectangle(0, 0, w, 16, fill=BORDER, outline="")
         filled = int(w * score / 100)

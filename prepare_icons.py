@@ -61,8 +61,12 @@ def make_ico():
 if __name__ == "__main__":
     print("Preparing icons from Industirlity.png...")
     if not SRC.exists():
-        print(f"  ❌ Source not found: {SRC}")
-        sys.exit(1)
+        fallback = ASSETS / "Industirlity.png"
+        if fallback.exists():
+            SRC = fallback
+        else:
+            print(f"  ❌ Source not found: {SRC}")
+            sys.exit(1)
 
     print("  → icon.ico  (Windows)")
     make_ico()
