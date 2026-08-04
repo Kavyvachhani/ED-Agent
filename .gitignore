@@ -8,8 +8,9 @@ __pycache__/
 
 # Distribution / packaging
 build/
+build_old*/
 dist/
-dist_old_*/
+dist_old*/
 *.egg-info/
 .eggs/
 
